@@ -176,7 +176,8 @@
                                             <td><?php echo $row['dob']; ?></td>
                                             <td><?php echo $row['address']; ?></td>
                                             <td><?php echo $row['school_year']; ?></td>
-                                            <td><a href="attendance_details_view.php?id=<?php echo $row['member_id']; ?>" class="btn btn-sm btn-success">View</a>
+                                            <td><a href="student_details_view.php?id=<?php echo $row['member_id']; ?>" class="btn btn-sm btn-info">More Details</a>
+                                            <a href="attendance_details_view.php?id=<?php echo $row['member_id']; ?>" class="btn btn-sm btn-success">View Attendance</a>
                                             <a href="#" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#edit_<?php echo $row['member_id']; ?>">Edit</a>
                                             <a href="../../controller/coordinator/process/save_data.php?delete_id=<?php echo $row['member_id']; ?>" 
                                                onclick="return confirm('Are you sure you want to delete this student?');" 

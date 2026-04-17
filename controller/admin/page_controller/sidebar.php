@@ -38,8 +38,7 @@ $url = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
 		</a>
 		<ul class="mm-collapse">
 			<li><a href="active_announcements" class="<?php if($url = "http://localhost/church/views/admin/active_announcements"){ echo 'active'; }else{}; ?>">Active</a></li>
-			<!-- <li><a href="inactive_announcements" class="<?php //if($url = "http://localhost/church/views/admin/inactive_announcements"){ echo 'active'; }else{}; ?>">Archive</a></li> -->
-			<!-- <li><a href="cancelled_view">Cancelled</a></li> -->
+			<li><a href="inactive_announcements">Archive</a></li>
 		</ul>
 	</li>
 
@@ -63,6 +62,19 @@ $url = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
 		<span>Archives</span>
 		</a>
 	</li> -->
+
+	<li class="">
+		<a href="#" aria-expanded="false">
+		<div class="icon_menu">
+			<span class="fa fa-archive"></span>
+		</div>
+		<span>Archives</span>
+		</a>
+		<ul class="mm-collapse">
+			<li><a href="inactive_announcements">Announcements</a></li>
+			<li><a href="archived_schedules_view">Schedules</a></li>
+		</ul>
+	</li>
 
 	<li class="">
 		<a href="#" aria-expanded="false">

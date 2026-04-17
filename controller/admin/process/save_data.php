@@ -167,7 +167,16 @@ if (isset($_REQUEST['btnApproveRes'])) {
 	}
 }elseif (isset($_REQUEST['btnAnnouncementInactive'])) {
 
-	$query = mysqli_query($con, "UPDATE announcements_tbl SET announcement_status = '0' WHERE announcement_id = '{$_REQUEST['a_id']}'");
+	$a_id = (int)$_REQUEST['a_id'];
+	$query = mysqli_query($con, "UPDATE announcements_tbl SET announcement_status = '0' WHERE announcement_id = '$a_id'");
+
+	if ($query) {
+		header('location: ../../../views/admin/active_announcements');
+	}
+}elseif (isset($_REQUEST['btnCancelAnnouncement'])) {
+
+	$a_id = (int)$_REQUEST['a_id'];
+	$query = mysqli_query($con, "UPDATE announcements_tbl SET announcement_status = '2' WHERE announcement_id = '$a_id'");
 
 	if ($query) {
 		header('location: ../../../views/admin/active_announcements');

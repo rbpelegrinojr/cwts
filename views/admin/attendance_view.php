@@ -9,8 +9,9 @@
         var myWindow = window.open('', 'Attendance Report', 'height=600,width=900,scrollbars=yes');
         myWindow.document.write('<html><head><title>Attendance Report</title>');
         myWindow.document.write('<link href="assets/bootstrap.min.css" rel="stylesheet">');
-        myWindow.document.write('<style>body{font-family: Arial, Helvetica, sans-serif;} .prints{margin: 20px;} table{width:100%; border-collapse: collapse;} table th, table td{padding:8px; border:1px solid #e2e2e2;}</style>');
-        myWindow.document.write('</head><body><center><h3 style="margin:0;">Event Manager using Biometrics with SMS Notification</h3><br><h6 style="margin-top:5px;">Attendance Report</h6></center><br>');
+        myWindow.document.write('<style>body{font-family: Arial, Helvetica, sans-serif;} .prints{margin: 20px;} table{width:100%; border-collapse: collapse;} table th, table td{padding:8px; border:1px solid #e2e2e2;} .logo-header{text-align:center; margin-bottom:15px;} .logo-header img{height:80px;}</style>');
+        myWindow.document.write('</head><body>');
+        myWindow.document.write('<div class="logo-header"><img src="<?php echo htmlspecialchars($resSettings["system_logo"]); ?>" alt="Logo"><h3 style="margin:5px 0 0 0;"><?php echo htmlspecialchars($resSettings["system_title"]); ?></h3><h6 style="margin-top:5px;">Attendance Report</h6></div>');
         myWindow.document.write(data);
         myWindow.document.write('<footer style="position: fixed; bottom:10px; width:100%; text-align: center;">This is a system generated report</footer>');
         myWindow.document.write('</body></html>');

@@ -36,6 +36,48 @@
   }
 </style>
 
+<?php
+// ----------------------------------------
+// AUTO-ARCHIVE PAST ANNOUNCEMENTS
+// ----------------------------------------
+$today = date('Y-m-d');
+mysqli_query($con, "
+  UPDATE announcements_tbl
+  SET announcement_status = '0'
+  WHERE announcement_status = '1'
+    AND date_created <> ''
+    AND date_created < '$today'
+");
+
+// ----------------------------------------
+// COORDINATOR COLLEGE FILTER
+// ----------------------------------------
+$coordinator_college_id = (int)$resInfo['college_id'];
+
+// Colleges list for modal
+$colleges = array();
+$qColleges = mysqli_query($con, "SELECT college_id, college_abbreviation, college_name FROM colleges ORDER BY college_abbreviation ASC");
+if ($qColleges) {
+  while ($c = mysqli_fetch_assoc($qColleges)) {
+    $colleges[] = $c;
+  }
+}
+
+// Build query - show only announcements for coordinator's college OR ALL (college_id=0)
+$where = "a.announcement_status = '1'";
+$where .= " AND a.date_created >= '$today'";
+$where .= " AND (a.college_id = $coordinator_college_id OR a.college_id = 0)";
+
+$query = mysqli_query($con, "
+  SELECT a.*,
+         IFNULL(c.college_abbreviation, 'ALL') AS college_abbr
+  FROM announcements_tbl a
+  LEFT JOIN colleges c ON c.college_id = a.college_id
+  WHERE $where
+  ORDER BY a.announcement_id DESC
+");
+?>
+
 <div class="main_content_iners overly_inners">
   <div class="container-fluid p-0">
     <div class="row">
@@ -50,19 +92,41 @@
           <div class="white_card_body">
 
             <?php
-              $query = mysqli_query($con, "SELECT * FROM announcements_tbl WHERE announcement_status = '1' ORDER BY announcement_id DESC");
-              if (mysqli_num_rows($query) == 0) {
+              if (!$query || mysqli_num_rows($query) == 0) {
                 echo '<div class="alert alert-warning"><label>No Data Available.</label></div>';
               }
             ?>
 
-            <div>
-              <label><b>Total: <?php echo mysqli_num_rows($query); ?></b></label>
-              <a class="btn btn-success btn-sm" href="#" data-toggle="modal" data-target="#add_announcement" style="float: right;">Add Announcement</a>
+            <div class="row align-items-center">
+              <div class="col-md-6">
+                <label><b>Total: <?php echo ($query ? mysqli_num_rows($query) : 0); ?></b></label>
+              </div>
+              <div class="col-md-6 text-right">
+                <a class="btn btn-success btn-sm" href="#" data-toggle="modal" data-target="#add_announcement">Add Announcement</a>
+              </div>
             </div>
 
             <br>
             <div id="calendar"></div>
+
+            <?php
+              // Build events array
+              $events = array();
+              if ($query) {
+                mysqli_data_seek($query, 0);
+                while ($row = mysqli_fetch_assoc($query)) {
+                  $events[] = array(
+                    'title' => '['.$row['college_abbr'].'] '.$row['subject_announcement'],
+                    'start' => date('Y-m-d', strtotime($row['date_created'])),
+                    'extendedProps' => array(
+                      'description' => $row['announcement'],
+                      'id'          => $row['announcement_id'],
+                      'college'     => $row['college_abbr']
+                    )
+                  );
+                }
+              }
+            ?>
 
             <script>
               document.addEventListener('DOMContentLoaded', function() {
@@ -75,25 +139,7 @@
                     center: 'title',
                     right: 'dayGridMonth,timeGridWeek,timeGridDay'
                   },
-                  events: [
-                    <?php
-                      mysqli_data_seek($query, 0);
-                      while ($row = mysqli_fetch_assoc($query)) {
-                        $title = addslashes($row['subject_announcement']);
-                        $desc = addslashes($row['announcement']);
-                        // format date to ISO
-                        $date = date('Y-m-d', strtotime($row['date_created']));
-                        echo "{
-                          title: '$title',
-                          start: '$date',
-                          extendedProps: {
-                            description: '$desc',
-                            id: '{$row['announcement_id']}'
-                          }
-                        },";
-                      }
-                    ?>
-                  ],
+                  events: <?php echo json_encode($events); ?>,
                   eventClick: function(info) {
                     var eventObj = info.event;
                     var modalHtml = `
@@ -105,9 +151,13 @@
                               <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                             </div>
                             <div class="modal-body">
-                              <label style='font-size: 20px;'>${eventObj.extendedProps.description}</label>
+                              <div style="font-size:14px; margin-bottom:8px;">
+                                <b>For:</b> ${eventObj.extendedProps.college}
+                              </div>
+                              <label style='font-size: 18px; white-space: pre-line;'>${eventObj.extendedProps.description}</label>
                             </div>
                             <div class="modal-footer">
+                              <a href="#" onclick="cancelEvent(${eventObj.extendedProps.id})" class="btn btn-warning">Cancel Event</a>
                               <a href="#" onclick="inactive(${eventObj.extendedProps.id})" class="btn btn-danger">Archive</a>
                               <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                             </div>
@@ -136,8 +186,8 @@
 
 <!-- Add Announcement Modal -->
 <div class="modal fade" id="add_announcement" tabindex="-1" role="dialog" aria-hidden="true">
-  <form action="../../controller/admin/process/save_data.php">
-    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+  <form action="../../controller/admin/process/save_data.php" id="announcementForm" method="post">
+    <div class="modal-dialog modal-dialog-centered modal-xs" role="document">
       <div class="modal-content">
         <div class="modal-header">
           <h3 class="modal-title" style="color: black;">Add Announcement</h3>
@@ -149,14 +199,54 @@
               <label>Subject</label>
               <input type="text" name="subject_announcement" class="form-control" required placeholder="Type Here...">
             </div>
-            <div class="col-md-12">
+
+            <div class="col-md-12 mt-2">
               <label>Event Date</label>
-              <input type="date" name="date_created" min="<?php echo date('Y-m-d'); ?>" class="form-control" required placeholder="Type Here...">
+              <input type="date" name="date_created" min="<?php echo date('Y-m-d'); ?>" class="form-control" required>
             </div>
-            <div class="col-md-12">
-              <label>Announcement</label>
-              <textarea class="form-control" placeholder="Type Here..." name="announcement"></textarea>
+
+            <div class="col-md-12 mt-2">
+              <label>Announcement For</label>
+              <select name="college_id" class="form-control" required>
+                <?php
+                // Coordinator can only create announcements for their own college
+                foreach ($colleges as $c):
+                  if ((int)$c['college_id'] == $coordinator_college_id):
+                ?>
+                  <option value="<?php echo (int)$c['college_id']; ?>" selected>
+                    <?php echo htmlspecialchars($c['college_abbreviation']); ?> - <?php echo htmlspecialchars($c['college_name']); ?>
+                  </option>
+                <?php
+                  endif;
+                endforeach;
+                ?>
+              </select>
             </div>
+
+            <div class="col-md-12 mt-3">
+              <label>What</label>
+              <input type="text" id="what_input" class="form-control" placeholder="e.g. General Assembly">
+            </div>
+
+            <div class="col-md-12 mt-2">
+              <label>Where</label>
+              <input type="text" id="where_input" class="form-control" placeholder="e.g. School Gym">
+            </div>
+
+            <div class="col-md-12 mt-2">
+              <label>When</label>
+              <input type="text" id="when_input" class="form-control" placeholder="e.g. Dec 15, 2025 - 2:00 PM">
+            </div>
+
+            <div class="col-md-12 mt-3">
+              <label>Additional Details (optional)</label>
+              <textarea id="details_input" class="form-control" placeholder="Other info..."></textarea>
+            </div>
+
+            <div class="col-md-12 mt-3" style="display:none;">
+              <textarea class="form-control" name="announcement" id="announcement_field"></textarea>
+            </div>
+
           </div>
         </div>
         <div class="modal-footer">
@@ -168,10 +258,41 @@
   </form>
 </div>
 
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var form = document.getElementById('announcementForm');
+    if (!form) return;
+
+    form.addEventListener('submit', function () {
+      var what  = document.getElementById('what_input').value.trim();
+      var where_val = document.getElementById('where_input').value.trim();
+      var when_val  = document.getElementById('when_input').value.trim();
+      var details = document.getElementById('details_input').value.trim();
+
+      var lines = [];
+      if (what)  lines.push('What: '  + what);
+      if (where_val) lines.push('Where: ' + where_val);
+      if (when_val)  lines.push('When: '  + when_val);
+      if (details) {
+        lines.push('');
+        lines.push(details);
+      }
+
+      document.getElementById('announcement_field').value = lines.join('\n');
+    });
+  });
+</script>
+
 <script type="text/javascript">
   function inactive(a_id) {
     if (confirm('Set Announcement as Inactive?')) {
       window.location.href='../../controller/admin/process/save_data.php?btnAnnouncementInactive=1&a_id='+a_id;
+    }
+  }
+
+  function cancelEvent(a_id) {
+    if (confirm('Are you sure you want to cancel this event/announcement?')) {
+      window.location.href='../../controller/admin/process/save_data.php?btnCancelAnnouncement=1&a_id='+a_id;
     }
   }
 </script>
