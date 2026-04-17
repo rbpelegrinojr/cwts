@@ -1,54 +1,8 @@
 <?php //header('location: active_announcements'); ?>
 <?php include 'header.php'; ?>
-<link rel="stylesheet" href="calendar/fullcalendar.css" />
-<script src="calendar/jquery.min.js"></script>
-<script src="calendar/jquery-ui.min.js"></script>
-<script src="calendar/moment.min.js"></script>
-<script src="calendar/fullcalendar.min.js"></script>
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css' rel='stylesheet' />
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
 
-  <script>
-   
-  $(document).ready(function() {
-   var calendar = $('#calendar').fullCalendar({
-    editable:true,
-    header:{
-        left:'prev, next today',
-        center:'title',
-        right:'month'
-    },
-    events:
-    <?php
-    $query = mysqli_query($con, "SELECT * FROM reservations_tbl WHERE reservation_status = '1'");
-
-    $data = array();
-
-    while ($row = mysqli_fetch_array($query)) {
-        // $end_date = date_create($row['event_date_end']);
-        // date_add($end_date, date_interval_create_from_date_string("1 day"));
-        $resType = mysqli_fetch_assoc(mysqli_query($con, "SELECT * FROM reservation_type_tbl WHERE reservation_type_id = '{$row['reservation_type']}'"));
-        $resMem = mysqli_fetch_assoc(mysqli_query($con, "SELECT * FROM members_tbl WHERE member_id = '{$row['member_id']}'"));
-        $data[] = array(
-            'id' => $row['reservation_id'],
-            'title' => $resType['reservation_type'].'  '.$row['reservation_date'].' @ '.date('h:ia',strtotime($row['reservation_time'])),
-            'start' => $row['reservation_date'],
-            //'end' => date_format($end_date, 'Y-m-d'),
-            'time' => '',
-            'desc' => $resMem['fname'].' '.$resMem['lname']
-        );
-    }
-    echo json_encode($data);
-    ?>,
-    selectable:true,
-    selectHelper:true,
-    editable:true,
-    eventClick:function (event) {
-        alert(event.title+' '+event.time+' | '+event.desc);
-        //window.location.href='view.php?event_id='+event.id+'&title='+event.title+'';
-    }
-   });
-  });
-   
-  </script>
 <div class="main_content_iner overly_inner ">
     <div class="container-fluid p-0 ">
 
@@ -58,7 +12,6 @@
                 <div class="page_title_left">
                     <h3 class="f_s_30 f_w_700 text_white">Dashboard</h3>
                     <ol class="breadcrumb page_bradcam mb-0">
-                    <!-- <li class="breadcrumb-item"><a href="index">Home </a></li> -->
                     </ol>
                 </div>
             </div>
@@ -70,9 +23,6 @@
             <div class="white_card card_height_100 mb_30">
                 <div class="white_card_header">
                     <div class="box_header m-0">
-                        <!-- <div class="main-title">
-                            
-                        </div> -->
                     </div>
                 </div>
 
@@ -94,8 +44,6 @@
                             </div>
                             <div class="widget-subheading">Total Students</div>
                             <div class="widget-description text-info">
-                                <!-- <i class="fa fa-ellipsis-h"></i>
-                                <span class="ps-1">115.5%</span> -->
                             </div>
                         </div>
                     </div>
@@ -113,21 +61,54 @@
                                     }
                                     ?>
                                 </div>
-                                <div class="widget-subheading">Announcemnts</div>
+                                <div class="widget-subheading">Announcements</div>
                                 <div class="widget-description text-info">
-                                    <!-- <i class="fa fa-ellipsis-h"></i>
-                                    <span class="ps-1">115.5%</span> -->
                                 </div>
                             </div>
                         </div>
                     </div>
                     <hr>
 
-                    <div class="white_card_body" style="display: none;">
-                        <form action="pending_accounts_view" method="POST">
-                            <div id="calendar" style="height: 0;"></div>
-                        </form>
+                    <!-- Upcoming Announcements Section -->
+                    <div class="white_card_body">
+                        <h4 class="mb-3"><i class="fa fa-bullhorn"></i> Upcoming Announcements</h4>
+                        <?php
+                        $today = date('Y-m-d');
+                        $upcomingQuery = mysqli_query($con, "SELECT a.*, IFNULL(c.college_abbreviation, 'ALL') AS college_abbr
+                            FROM announcements_tbl a
+                            LEFT JOIN colleges c ON c.college_id = a.college_id
+                            WHERE a.announcement_status = '1' AND a.date_created >= '$today'
+                            ORDER BY a.date_created ASC
+                            LIMIT 10");
+
+                        if ($upcomingQuery && mysqli_num_rows($upcomingQuery) > 0):
+                        ?>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead class="table-dark text-center">
+                                    <th>Date</th>
+                                    <th>Subject</th>
+                                    <th>For</th>
+                                    <th>Details</th>
+                                </thead>
+                                <tbody>
+                                    <?php while ($ann = mysqli_fetch_assoc($upcomingQuery)): ?>
+                                    <tr>
+                                        <td class="text-center"><?php echo date('M d, Y', strtotime($ann['date_created'])); ?></td>
+                                        <td><?php echo htmlspecialchars($ann['subject_announcement']); ?></td>
+                                        <td class="text-center"><span class="badge bg-info"><?php echo htmlspecialchars($ann['college_abbr']); ?></span></td>
+                                        <td><?php echo nl2br(htmlspecialchars(substr($ann['announcement'], 0, 100))); ?><?php echo (strlen($ann['announcement']) > 100 ? '...' : ''); ?></td>
+                                    </tr>
+                                    <?php endwhile; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <a href="active_announcements" class="btn btn-sm btn-primary">View All Announcements</a>
+                        <?php else: ?>
+                            <div class="alert alert-info">No upcoming announcements.</div>
+                        <?php endif; ?>
                     </div>
+
                 </div>
             </div>
         </div>

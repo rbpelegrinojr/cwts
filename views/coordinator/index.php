@@ -68,7 +68,7 @@
                                 <div class="widget-numbers">
                                     <?php
                                     $active_date = date('Y-m-d');
-                                    $row3 = mysqli_num_rows(mysqli_query($con, "SELECT * FROM announcements_tbl WHERE announcement_status = '1'"));
+                                    $row3 = mysqli_num_rows(mysqli_query($con, "SELECT * FROM announcements_tbl WHERE announcement_status = '1' AND (college_id = '{$resInfo['college_id']}' OR college_id = 0)"));
                                     if ($row3 == 0) {
                                         echo "0";
                                     }else{
@@ -76,7 +76,7 @@
                                     }
                                     ?>
                                 </div>
-                                <div class="widget-subheading">Announcemnts</div>
+                                <div class="widget-subheading">Announcements</div>
                                 <div class="widget-description text-info">
                                     <!-- <i class="fa fa-ellipsis-h"></i>
                                     <span class="ps-1">115.5%</span> -->
@@ -86,7 +86,50 @@
                     </div>
                     <hr>
                     <?php
-                      $query = mysqli_query($con, "SELECT * FROM announcements_tbl WHERE announcement_status = '1' ORDER BY announcement_id DESC");
+                      // Upcoming announcements for coordinator's college
+                      $today = date('Y-m-d');
+                      $coordinator_college_id = (int)$resInfo['college_id'];
+                      $upcomingQuery = mysqli_query($con, "SELECT a.*, IFNULL(c.college_abbreviation, 'ALL') AS college_abbr
+                          FROM announcements_tbl a
+                          LEFT JOIN colleges c ON c.college_id = a.college_id
+                          WHERE a.announcement_status = '1' AND a.date_created >= '$today'
+                            AND (a.college_id = $coordinator_college_id OR a.college_id = 0)
+                          ORDER BY a.date_created ASC
+                          LIMIT 10");
+                    ?>
+
+                    <!-- Upcoming Announcements Section -->
+                    <div class="white_card_body">
+                        <h4 class="mb-3"><i class="fa fa-bullhorn"></i> Upcoming Announcements</h4>
+                        <?php if ($upcomingQuery && mysqli_num_rows($upcomingQuery) > 0): ?>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead class="table-dark text-center">
+                                    <th>Date</th>
+                                    <th>Subject</th>
+                                    <th>For</th>
+                                    <th>Details</th>
+                                </thead>
+                                <tbody>
+                                    <?php while ($ann = mysqli_fetch_assoc($upcomingQuery)): ?>
+                                    <tr>
+                                        <td class="text-center"><?php echo date('M d, Y', strtotime($ann['date_created'])); ?></td>
+                                        <td><?php echo htmlspecialchars($ann['subject_announcement']); ?></td>
+                                        <td class="text-center"><span class="badge bg-info"><?php echo htmlspecialchars($ann['college_abbr']); ?></span></td>
+                                        <td><?php echo nl2br(htmlspecialchars(substr($ann['announcement'], 0, 100))); ?><?php echo (strlen($ann['announcement']) > 100 ? '...' : ''); ?></td>
+                                    </tr>
+                                    <?php endwhile; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <a href="active_announcements" class="btn btn-sm btn-primary">View All Announcements</a>
+                        <?php else: ?>
+                            <div class="alert alert-info">No upcoming announcements.</div>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php
+                      $query = mysqli_query($con, "SELECT * FROM announcements_tbl WHERE announcement_status = '1' AND (college_id = $coordinator_college_id OR college_id = 0) ORDER BY announcement_id DESC");
                       if (mysqli_num_rows($query) == 0) {
                         echo '<div class="alert alert-warning"><label>No Data Available.</label></div>';
                       }

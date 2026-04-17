@@ -40,6 +40,18 @@ $url = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
 	<li class="">
 		<a href="#" aria-expanded="false">
 			<div class="icon_menu">
+				<span class="fa fa-bullhorn"></span>
+			</div>
+			<span>Announcement/Event</span>
+		</a>
+		<ul class="mm-collapse">
+			<li><a href="active_announcements">Active</a></li>
+			<li><a href="inactive_announcements">Archive</a></li>
+		</ul>
+	</li>
+	<li class="">
+		<a href="#" aria-expanded="false">
+			<div class="icon_menu">
 				<span class="fa fa-users"></span>
 			</div>
 			<span>Students</span>
@@ -49,14 +61,18 @@ $url = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
 		</ul>
 	</li>
 
-	<!-- <li class="">
-		<a href="archives_view">
+	<li class="">
+		<a href="#" aria-expanded="false">
 		<div class="icon_menu">
 			<span class="fa fa-archive"></span>
 		</div>
 		<span>Archives</span>
 		</a>
-	</li> -->
+		<ul class="mm-collapse">
+			<li><a href="inactive_announcements">Announcements</a></li>
+			<li><a href="archived_schedules_view">Schedules</a></li>
+		</ul>
+	</li>
 
 	<li class="">
 		<a href="#" aria-expanded="false">

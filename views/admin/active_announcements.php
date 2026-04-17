@@ -186,6 +186,7 @@ $query = mysqli_query($con, "
                   <label style='font-size: 18px; white-space: pre-line;'>${eventObj.extendedProps.description}</label>
                 </div>
                 <div class="modal-footer">
+                  <a href="#" onclick="cancelEvent(${eventObj.extendedProps.id})" class="btn btn-warning">Cancel Event</a>
                   <a href="#" onclick="inactive(${eventObj.extendedProps.id})" class="btn btn-danger">Archive</a>
                   <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                 </div>
@@ -207,6 +208,12 @@ $query = mysqli_query($con, "
   function inactive(a_id) {
     if (confirm('Set Announcement as Inactive?')) {
       window.location.href='../../controller/admin/process/save_data.php?btnAnnouncementInactive=1&a_id='+a_id;
+    }
+  }
+
+  function cancelEvent(a_id) {
+    if (confirm('Are you sure you want to cancel this event/announcement?')) {
+      window.location.href='../../controller/admin/process/save_data.php?btnCancelAnnouncement=1&a_id='+a_id;
     }
   }
 </script>

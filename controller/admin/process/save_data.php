@@ -172,6 +172,14 @@ if (isset($_REQUEST['btnApproveRes'])) {
 	if ($query) {
 		header('location: ../../../views/admin/active_announcements');
 	}
+}elseif (isset($_REQUEST['btnCancelAnnouncement'])) {
+
+	$a_id = (int)$_REQUEST['a_id'];
+	$query = mysqli_query($con, "UPDATE announcements_tbl SET announcement_status = '2' WHERE announcement_id = '$a_id'");
+
+	if ($query) {
+		header('location: ../../../views/admin/active_announcements');
+	}
 }elseif (isset($_REQUEST['btnSaveAnnouncement1111'])) {
 	$announcement = mysqli_escape_string($con, $_REQUEST['announcement']);
 	$subject_announcement = mysqli_escape_string($con, $_REQUEST['subject_announcement']);
